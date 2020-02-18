@@ -184,3 +184,29 @@ public:
         is reponsible for cleaning up memory. */
     void join_delete(Rower* other);
 };
+
+class Taxes : public Rower {
+public:
+	//schema "IFBII"
+	size_t salary=0, rate=1, isded=2, ded=3, taxes=4;
+	void accept(Row& r) {
+		int tx = (int) r.get_int(salary) * get_float(rate);
+		tx -= r.get_bool(isded) ? r.get_int(ded) : 0;
+		r.set(taxes, tx);
+	}
+};
+
+class payment : public Rower {
+	public:
+	//schema "IFIFIF.....F"
+	//calculate total payments by adding each payments*discount 
+	
+	void accept(Row& r) {
+		size_t total = 0;
+		for(size_t i = 0; i < (r.num - 1)/2; i++) {
+			total = total + r.get_int(2*i)* r.get_float(2*i + 1);
+		}
+		r.set(r.num - 1, (float)total);
+	}
+};
+
