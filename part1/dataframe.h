@@ -65,6 +65,7 @@ public:
             s.add_column(col->get_type(), name);
         }
     }
+    
     /** Return the value at the given column and row. Accessing rows or
      *  columns out of bounds, or request the wrong type is undefined.*/
     int get_int(size_t col, size_t row) {
@@ -125,6 +126,7 @@ public:
             }
         }
     }
+    
     void set(size_t col, size_t row, float val) {
         if(col < s.column_num && data[col]->get_type() == 'F') {
             if(row < s.row_num) {
@@ -200,15 +202,13 @@ public:
     }
 
     void pmap(Rower& r) {
-        std::vector<std::thread> threads;
+        std::thread[row_num] threads;
         for (int i = 0; i < row_num; ++i) {
-            threads.push_back(std::thread(map_helper, r, i));
+            threads[i] = new std::thread(map_helper, r, i));
         }
-
-  // do some other stuff
-
+        
   // loop again to join the thread
-        for (auto& t : threads) {
+        for (thread t : threads) {
             t.join();
         }
     }
