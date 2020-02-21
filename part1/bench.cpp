@@ -96,8 +96,8 @@ void testpmap_RCG() {
 
 
 int main(int argc, char **argv) {
- //       testmap_Fib();
- //       testpmap_Fib();
+        testmap_Fib();
+        testpmap_Fib();
         testmap_RCG();
 	testpmap_RCG();
 	return 0;
