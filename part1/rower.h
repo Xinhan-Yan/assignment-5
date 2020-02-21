@@ -4,6 +4,7 @@
 #pragma once
 #include "schema.h"
 #include "column.h"
+#include "math.h"
 
 #ifndef SUBMISSION_ROWER_H
 #define SUBMISSION_ROWER_H
@@ -74,26 +75,26 @@ class Row : public Object {
     * a value of the wrong type is undefined. */
   void set(size_t col, int val) {
 	  if(types[col] == 'I') {
-		  data[col]->as_int()->push_back(val);
+		  data[col]->as_int()->set(0, val);
 	  }
   }
 
   void set(size_t col, float val) {
 	  if(types[col] == 'F') {
-          data[col]->as_float()->push_back(val);
+          data[col]->as_float()->set(0, val);
           }
   }
 
   void set(size_t col, bool val) {
 	  if(types[col] == 'B') {
-          data[col]->as_bool()->push_back(val);
+          data[col]->as_bool()->set(0, val);
           }
   }
 
   /** The string is external. */
   void set(size_t col, String* val) {
 	  if(types[col] == 'S') {
-          data[col]->as_string()->push_back(val);
+          data[col]->as_string()->set(0, val);
       }
   }
  
@@ -176,7 +177,9 @@ public:
         should not be retained as it is likely going to be reused in the next
         call. The return value is used in filters to indicate that a row
         should be kept. */
-    virtual bool accept(Row& r);
+    virtual bool accept(Row& r) {
+	    return false;
+    }
 
     /** Once traversal of the data frame is complete the rowers that were
         split off will be joined.  There will be one join per split. The
@@ -185,28 +188,46 @@ public:
     void join_delete(Rower* other);
 };
 
-class Taxes : public Rower {
-public:
-	//schema "IFBII"
-	size_t salary=0, rate=1, isded=2, ded=3, taxes=4;
-	void accept(Row& r) {
-		int tx = (int) r.get_int(salary) * get_float(rate);
-		tx -= r.get_bool(isded) ? r.get_int(ded) : 0;
-		r.set(taxes, tx);
-	}
+
+
+class RCG : public Rower {
+        public:
+		//schema "SSSSSSSSSS"
+                virtual bool accept(Row& r) {
+			String* s;
+			for(int i = 0; i < 9; i++) {
+				char* buffer = (char*) malloc(2);
+				buffer[0] = rand()%26+'a';
+				s = new String(buffer);
+				r.set(i, s);
+				free(buffer);
+			}
+		        char* buffer = (char*) malloc(10);
+			for(int i = 0; i < 9; i++) {
+				buffer[i] = r.get_string(i)->at(0);
+			}
+			s = new String(buffer);
+			r.set(10, s);
+			free(buffer);
+			return true;
+                   }
 };
 
-class payment : public Rower {
+
+class Fibonacci : public Rower {
 	public:
-	//schema "IFIFIF.....F"
-	//calculate total payments by adding each payments*discount 
-	
-	void accept(Row& r) {
-		size_t total = 0;
-		for(size_t i = 0; i < (r.num - 1)/2; i++) {
-			total = total + r.get_int(2*i)* r.get_float(2*i + 1);
+	//schema "IIIIIIIIII"
+ 		int t;
+		bool b = true;
+		virtual bool accept(Row& r) {
+			for(int i = 2; i < 10; i++) {
+				t = r.get_int(i-2) * r.get_int(i-1);
+				if(r.get_int(i) != t) {
+					b = false;
+					r.set(i, t);
+				}
+			}
+			return b;
 		}
-		r.set(r.num - 1, (float)total);
-	}
 };
 

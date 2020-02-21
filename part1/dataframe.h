@@ -1,15 +1,15 @@
 //
 // Created by Rahul Kumar on 2/13/20.
 //
-#include "/downloadsschema.h"
+#include "schema.h"
 #include "rower.h"
 #include "column.h"
+#include <stdio.h>
+#include <thread>
 #ifndef SUBMISSION_DATAFRAME_H
 #define SUBMISSION_DATAFRAME_H
 
 #endif //SUBMISSION_DATAFRAME_H
-
-
 
 /****************************************************************************
  * DataFrame::
@@ -49,7 +49,23 @@ public:
         memcpy(s.column_names, schema.column_names, s.column_num);
         memcpy(s.row_names, schema.row_names, s.row_num);
         data = new Column*[s.column_num];
-    }
+	for(int i = 0; i < s.column_num; i++) {
+		if(s.col_type(i) == 'S') {
+			data[i] = new StringColumn();
+		}
+		if(s.col_type(i) == 'B') {
+                        data[i] = new BoolColumn();
+                }
+		if(s.col_type(i) == 'I') {
+                        data[i] = new IntColumn();
+                }
+		if(s.col_type(i) == 'F') {
+                        data[i] = new FloatColumn();
+                }
+	}
+	    }
+	    
+	    
     /** Returns the dataframe's schema. Modifying the schema after a dataframe
       * has been created in undefined. */
     Schema& get_schema() {
@@ -150,13 +166,13 @@ public:
     void fill_row(size_t idx, Row& row) {
         for (int i = 0; i < row.num;i++) {
             if (data[i]->get_type() == 'S') {
-                row->set(i, data[i]->as_string()->get(idx));
+                row.set(i, data[i]->as_string()->get(idx));
             } else if (data[i]->get_type() == 'I') {
-                row->set(i, data[i]->as_int()->get(idx));
+                row.set(i, data[i]->as_int()->get(idx));
             } else if (data[i]->get_type() == 'B') {
-                row->set(i, data[i]->as_bool()->get(idx));
+                row.set(i, data[i]->as_bool()->get(idx));
             } else if (data[i]->get_type() == 'F') {
-                row->set(i, data[i]->as_float()->get(idx));
+                row.set(i, data[i]->as_float()->get(idx));
             }
         }
     }
@@ -170,11 +186,12 @@ public:
             } else if (data[i]->get_type() == 'I') {
                 data[i]->push_back(row.get_int(i));
             } else if (data[i]->get_type() == 'B') {
-                data[i]->push_back(row.get_string(i));
+                data[i]->push_back(row.get_bool(i));
             } else if (data[i]->get_type() == 'F') {
                 data[i]->push_back(row.get_float(i));
             }
-        }
+	}
+	s.row_num++;
     }
     /** The number of rows in the dataframe. */
     size_t nrows() {
@@ -188,36 +205,46 @@ public:
 
     /** Visit rows in order */
     void map(Rower& r) {
-        for (int i = 0; i < num; i++) {
-            Row* ro = new Row(this->s);
-            fill_row(i,*ro);
-            r.accept(*ro);
-        }
-    }
-    
-    void map_helper(Rower& r, int i) {
-        Row* ro = new Row(this->s);
-        fill_row(i, *ro);
-        r.accept(*ro);
+	    for (int i = 0; i < s.row_num; i++) {
+		    Row* ro = new Row(this->s);
+	       	    fill_row(i, *ro);
+		    r.accept(*ro);
+	    }
     }
 
-    void pmap(Rower& r) {
-        std::thread[row_num] threads;
-        for (int i = 0; i < row_num; ++i) {
-            threads[i] = new std::thread(map_helper, r, i));
-        }
-        
-  // loop again to join the thread
-        for (thread t : threads) {
-            t.join();
-        }
+    void map_helper(Rower& r, int cur) {
+	    int start = cur * s.row_num / 2;
+	    int end = (cur + 1) * s.row_num / 2;
+	    for (int i = start; i < end; i++) {
+                    Row* ro = new Row(this->s);
+                    fill_row(i, *ro);
+                    r.accept(*ro);
+            }
     }
 
+   void pmap(Rower& r) {
+        std::thread* threads[2];
+        for (int i = 0; i < 2; ++i) {
+                threads[i] = 
+                    new std::thread(
+                        &DataFrame::map_helper, 
+                        this,
+                        std::ref(r),
+                        i);
+        }
+
+        // loop again to join the thread
+        for (int i = 0; i < 2; i++) {
+		threads[i]->join();
+        }
+}
+
+ 
     /** Create a new dataframe, constructed from rows for which the given Rower
       * returned true from its accept method. */
     DataFrame* filter(Rower& r) {
         DataFrame* df = new DataFrame(this->s);
-        for (int i = 0; i < num; i++) {
+        for (int i = 0; i < s.row_num; i++) {
             Row* ro = new Row(this->s);
             fill_row(i,*ro);
             if (r.accept(*ro) == true) {
@@ -232,7 +259,7 @@ public:
         for (size_t i = 0; i < s.column_num; i++) {
             std::cout << s.column_names[i] << " ";
         }
-        std::cout << ".\n";
+        std::cout << "\n";
         for (size_t i = 0; i < s.row_num; i++) {
             std::cout << s.row_names[i] << " ";
 
@@ -253,7 +280,7 @@ public:
 
                 }
             }
-            std::cout << ".\n";
+            std::cout << "\n";
         }
     }
 };
