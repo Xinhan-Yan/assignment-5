@@ -62,4 +62,12 @@ public:
     bool add_file_descriptor(int ip) {
         return file_descriptors->add(ip);
     }
+
+    bool set_ip(String* ip, int index) {
+        return ip_addresses->set(ip,index);
+    }
+
+    bool set_file_descriptor(int ip, int index) {
+        return file_descriptors->set(ip,index);
+    }
 };
