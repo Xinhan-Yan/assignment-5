@@ -1,4 +1,5 @@
 // Client side C/C++ program to demonstrate Socket programming
+// Client side C/C++ program to demonstrate Socket programming
 #include <stdio.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -27,6 +28,13 @@ int main(int argc, char const *argv[])
         return -1;
     }
     send(sock, argv[1],strlen(argv[1]),0);
+    char buf[1000];
+    int numbytes = 1000;
+    while(numbytes > 0) {
+        numbytes = recv(sock, buf, 1000 - 1, 0);
+        buf[numbytes] = '\0';
+        printf("IP ADDRESS%s",buf);
+    }
     char i;
     string ipaddr;
     std::cout << "Enter Valid IP Address To Send: ";
